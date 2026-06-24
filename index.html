@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3a2417">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Job Site Time Clock</title>
+<style>
+  /* ---- Palette grounded in the trade: walnut, honey, sanded oak ---- */
+  :root{
+    --walnut:#3a2417; --walnut-2:#4d3220;
+    --honey:#e8a33d;  --honey-deep:#c97f1e;
+    --oak:#f3ead9;    --oak-line:#e0d2ba;
+    --green:#3f7d4f;  --red:#b1422f; --ink:#2a1c12;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    background:var(--walnut);color:var(--oak);
+    display:flex;flex-direction:column;min-height:100dvh;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  header{padding:22px 22px 6px}
+  .brand{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--honey);font-weight:700}
+  .title{font-size:30px;font-weight:800;line-height:1.05;margin-top:4px}
+
+  main{flex:1;display:flex;flex-direction:column;gap:16px;padding:18px 22px}
+
+  label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oak-line);margin-bottom:7px}
+  select,input{
+    width:100%;font-size:20px;padding:16px;border-radius:14px;border:2px solid var(--walnut-2);
+    background:#2b1a10;color:var(--oak);appearance:none;
+  }
+  select:focus,input:focus{outline:none;border-color:var(--honey)}
+  .row{display:flex;gap:12px}
+  .row>div{flex:1}
+
+  /* ---- Signature: the status panel changes the whole mood by state ---- */
+  .status{
+    border-radius:18px;padding:18px 20px;border:2px solid var(--walnut-2);
+    background:#2b1a10;display:flex;align-items:center;gap:14px;transition:.25s;
+  }
+  .status .dot{width:14px;height:14px;border-radius:50%;background:var(--oak-line);flex:none}
+  .status.in {border-color:var(--green);background:#22301f}
+  .status.in .dot{background:var(--green);box-shadow:0 0 0 6px rgba(63,125,79,.25)}
+  .status.out{border-color:var(--honey-deep);background:#2f2412}
+  .status.out .dot{background:var(--honey)}
+  .status .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oak-line)}
+  .status .big{font-size:21px;font-weight:800}
+
+  .buttons{display:flex;flex-direction:column;gap:14px;margin-top:auto}
+  button.act{
+    border:none;border-radius:18px;padding:26px;font-size:24px;font-weight:800;
+    letter-spacing:.02em;color:#fff;transition:transform .06s,filter .2s;
+  }
+  button.act:active{transform:scale(.98)}
+  button.act:disabled{filter:grayscale(.6) brightness(.7);}
+  .in {background:linear-gradient(180deg,var(--green),#2f5d3b)}
+  .out{background:linear-gradient(180deg,var(--honey),var(--honey-deep));color:var(--ink)}
+
+  .msg{min-height:22px;text-align:center;font-size:15px;padding:0 6px}
+  .msg a{color:var(--honey)}
+  .err{color:#ffb4a4}
+  .ok{color:#bfe6c4}
+
+  .setup{margin:40px 22px;padding:18px;border:1px dashed var(--honey-deep);border-radius:14px;font-size:14px;line-height:1.5;color:var(--oak-line)}
+  .setup code{color:var(--honey);word-break:break-all}
+  footer{padding:12px 22px 20px;font-size:12px;color:#8a755f;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Keystone Crew</div>
+  <div class="title">Job Site Time Clock</div>
+</header>
+
+<main id="app">
+  <div>
+    <label for="worker">Who are you?</label>
+    <select id="worker"><option value="">Loading crew…</option></select>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="pin">PIN (if set)</label>
+      <input id="pin" inputmode="numeric" maxlength="6" placeholder="••••" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="status out" id="status">
+    <div class="dot"></div>
+    <div>
+      <div class="label">Current status</div>
+      <div class="big" id="statusBig">Clocked out</div>
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="buttons">
+    <button class="act in"  id="btnIn">Clock In — Arrived</button>
+    <button class="act out" id="btnOut">Clock Out — Leaving</button>
+  </div>
+</main>
+
+<footer id="foot">v1 · GPS recorded with each punch</footer>
+
+<script>
+/* ============================================================
+   CONFIG — paste your Apps Script Web App URL between the quotes
+   (the one ending in /exec). Until you do, the app runs in DEMO mode.
+   ============================================================ */
+const WEB_APP_URL = "";
+
+const $ = id => document.getElementById(id);
+const DEMO = !WEB_APP_URL;
+let lastFix = null;
+
+/* ---- Load the crew list ---- */
+async function loadWorkers(){
+  if (DEMO){ showDemoNote(); fillWorkers(["Javier","Xavier","Bron"]); return; }
+  try{
+    const r = await fetch(WEB_APP_URL + "?action=workers");
+    const data = await r.json();
+    fillWorkers(data.workers || []);
+  }catch(e){ msg("Couldn't load crew list. Check the Web App URL.","err"); }
+}
+function fillWorkers(list){
+  const sel = $("worker");
+  sel.innerHTML = '<option value="">— select your name —</option>' +
+    list.map(n=>`<option>${n}</option>`).join("");
+  const saved = localStorage.getItem("tc_worker");
+  if (saved && list.includes(saved)) sel.value = saved;
+}
+
+/* ---- Get a GPS fix (best effort, never blocks the punch) ---- */
+function getLocation(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({lat:p.coords.latitude, lng:p.coords.longitude, accuracy:Math.round(p.coords.accuracy)}),
+      _ => resolve(null),
+      {enableHighAccuracy:true, timeout:8000, maximumAge:30000}
+    );
+  });
+}
+
+/* ---- Send a punch ---- */
+async function punch(action){
+  const worker = $("worker").value;
+  if(!worker){ msg("Pick your name first.","err"); return; }
+  localStorage.setItem("tc_worker", worker);
+  setBusy(true); msg("Getting location…");
+
+  lastFix = await getLocation();
+  const body = { worker, action, pin:$("pin").value, ...(lastFix||{}) };
+
+  if (DEMO){
+    setStatus(action==="in"?"in":"out");
+    msg(`DEMO: ${worker} clocked ${action==="in"?"IN":"OUT"}${lastFix?" · GPS captured":""}. Add your Web App URL to go live.`,"ok");
+    setBusy(false); return;
+  }
+
+  try{
+    // text/plain dodges the CORS preflight that blocks Apps Script POSTs
+    const r = await fetch(WEB_APP_URL,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(body)
+    });
+    const res = await r.json();
+    if(res.ok){
+      setStatus(action);
+      $("pin").value="";
+      msg(`${res.worker} clocked ${action==="in"?"IN":"OUT"} at ${res.time}.` + mapLink(),"ok");
+    }else{
+      msg(res.error || "Something went wrong.","err");
+    }
+  }catch(e){ msg("Network error — try again.","err"); }
+  setBusy(false);
+}
+
+function mapLink(){
+  if(!lastFix) return " (no GPS this time)";
+  return ` <a href="https://maps.google.com/?q=${lastFix.lat},${lastFix.lng}" target="_blank">view location</a>`;
+}
+function setStatus(state){
+  const s=$("status");
+  s.classList.remove("in","out"); s.classList.add(state==="in"?"in":"out");
+  $("statusBig").textContent = state==="in"?"Clocked in":"Clocked out";
+}
+function setBusy(b){ $("btnIn").disabled=b; $("btnOut").disabled=b; }
+function msg(t,cls=""){ const m=$("msg"); m.className="msg "+cls; m.innerHTML=t; }
+function showDemoNote(){
+  const d=document.createElement("div"); d.className="setup";
+  d.innerHTML="<b>Demo mode.</b> Open this file in an editor and paste your Apps Script "+
+    "Web App URL into <code>WEB_APP_URL</code> near the top of the script, then re-host it.";
+  $("foot").before(d);
+}
+
+$("btnIn").onclick  = ()=>punch("in");
+$("btnOut").onclick = ()=>punch("out");
+loadWorkers();
+</script>
+</body>
+</html>
