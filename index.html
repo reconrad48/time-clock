@@ -50,6 +50,7 @@
   .status.out .dot{background:var(--honey)}
   .status .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oak-line)}
   .status .big{font-size:21px;font-weight:800}
+  .status .sub{font-size:13px;color:var(--oak-line);margin-top:2px}
 
   .buttons{display:flex;flex-direction:column;gap:14px;margin-top:auto}
   button.act{
@@ -90,11 +91,12 @@
     </div>
   </div>
 
-  <div class="status out" id="status">
+  <div class="status" id="status">
     <div class="dot"></div>
     <div>
       <div class="label">Current status</div>
-      <div class="big" id="statusBig">Clocked out</div>
+      <div class="big" id="statusBig">Checking…</div>
+      <div class="sub" id="statusSub"></div>
     </div>
   </div>
 
@@ -123,7 +125,7 @@ let lastFix = null;
 async function loadWorkers(){
   if (DEMO){ showDemoNote(); fillWorkers(["Javier","Xavier","Bron"]); return; }
   try{
-    const r = await fetch(WEB_APP_URL + "?action=workers");
+    const r = await fetch(WEB_APP_URL + "?action=workers&t=" + Date.now());
     const data = await r.json();
     fillWorkers(data.workers || []);
   }catch(e){ msg("Couldn't load crew list. Check the Web App URL.","err"); }
@@ -134,6 +136,21 @@ function fillWorkers(list){
     list.map(n=>`<option>${n}</option>`).join("");
   const saved = localStorage.getItem("tc_worker");
   if (saved && list.includes(saved)) sel.value = saved;
+  refreshStatus();
+}
+
+/* ---- Ask the Sheet what this worker's real state is (in/out) ---- */
+async function refreshStatus(){
+  const worker = $("worker").value;
+  if(!worker){ setStatus("none"); return; }
+  if(DEMO){ setStatus("out"); return; }
+  try{
+    const r = await fetch(WEB_APP_URL + "?action=status&t=" + Date.now());
+    const data = await r.json();
+    const info = (data.status || {})[worker];
+    if(info && info.state === "in") setStatus("in", info.since);
+    else setStatus("out", info ? info.since : "");
+  }catch(e){ /* leave whatever is shown */ }
 }
 
 /* ---- Get a GPS fix (best effort, never blocks the punch) ---- */
@@ -176,6 +193,7 @@ async function punch(action){
       setStatus(action);
       $("pin").value="";
       msg(`${res.worker} clocked ${action==="in"?"IN":"OUT"} at ${res.time}.` + mapLink(),"ok");
+      refreshStatus();
     }else{
       msg(res.error || "Something went wrong.","err");
     }
@@ -187,10 +205,18 @@ function mapLink(){
   if(!lastFix) return " (no GPS this time)";
   return ` <a href="https://maps.google.com/?q=${lastFix.lat},${lastFix.lng}" target="_blank">view location</a>`;
 }
-function setStatus(state){
+function setStatus(state, since){
   const s=$("status");
-  s.classList.remove("in","out"); s.classList.add(state==="in"?"in":"out");
-  $("statusBig").textContent = state==="in"?"Clocked in":"Clocked out";
+  s.classList.remove("in","out");
+  if(state==="in") s.classList.add("in");
+  else if(state==="out") s.classList.add("out");
+  $("statusBig").textContent =
+    state==="in" ? "Clocked in" :
+    state==="out" ? "Clocked out" : "Pick your name";
+  const sub=$("statusSub");
+  if(state==="in" && since) sub.textContent = "Since " + since;
+  else if(state==="out" && since) sub.textContent = "Last punch " + since;
+  else sub.textContent = "";
 }
 function setBusy(b){ $("btnIn").disabled=b; $("btnOut").disabled=b; }
 function msg(t,cls=""){ const m=$("msg"); m.className="msg "+cls; m.innerHTML=t; }
@@ -203,6 +229,7 @@ function showDemoNote(){
 
 $("btnIn").onclick  = ()=>punch("in");
 $("btnOut").onclick = ()=>punch("out");
+$("worker").onchange = ()=>{ localStorage.setItem("tc_worker", $("worker").value); refreshStatus(); };
 loadWorkers();
 </script>
 </body>
