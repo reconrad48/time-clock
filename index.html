@@ -118,7 +118,7 @@
    CONFIG — paste your Apps Script Web App URL between the quotes
    (the one ending in /exec). Until you do, the app runs in DEMO mode.
    ============================================================ */
-const WEB_APP_URL = "";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw6VVSLYLoJNEfh1-Kn4bTOuPnAcktaBLAuXmPW2S9DYa5Rh0UHF4BlyxPbr80Zvjcs/exec";
 
 const $ = id => document.getElementById(id);
 const DEMO = !WEB_APP_URL;
@@ -126,7 +126,7 @@ let lastFix = null;
 
 /* ---- Load the crew list ---- */
 async function loadWorkers(){
-  if (DEMO){ showDemoNote(); fillWorkers(["Javier","Xavier","Bron"]); return; }
+  if (DEMO){ showDemoNote(); fillWorkers([]); return; }
   try{
     const r = await fetch(WEB_APP_URL + "?action=workers&t=" + Date.now());
     const data = await r.json();
@@ -229,9 +229,10 @@ function setBusy(b){ $("btnIn").disabled=b; $("btnOut").disabled=b; }
 function msg(t,cls=""){ const m=$("msg"); m.className="msg "+cls; m.innerHTML=t; }
 function showDemoNote(){
   const d=document.createElement("div"); d.className="setup";
-  d.innerHTML="<b>Demo mode.</b> Open this file in an editor and paste your Apps Script "+
-    "Web App URL into <code>WEB_APP_URL</code> near the top of the script, then re-host it.";
-  $("foot").before(d);
+  d.innerHTML="<b>⚠️ Web App URL is missing.</b> The crew list is empty because "+
+    "<code>WEB_APP_URL</code> near the top of this file is blank. Paste your Apps Script "+
+    "<code>/exec</code> URL between the quotes, re-upload, then hard-refresh.";
+  $("app").before(d);
 }
 
 $("btnIn").onclick  = ()=>punch("in");
