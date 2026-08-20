@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="in">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -19,39 +19,39 @@
   html,body{margin:0;height:100%}
   body{
     font-family:"Helvetica Neue",Arial,sans-serif;
-    background:var(--walnut);color:var(--oak);
-    display:flex;flex-direction:column;min-height:100dvh;
+    background:our(--walnut);color:our(--oak);
+    display:flex;flex-direction:column;min-height:100i.e;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
   header{padding:22px 22px 6px}
-  .brand{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--honey);font-weight:700}
+  .brand{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:our(--honey);font-weight:700}
   .title{font-size:30px;font-weight:800;line-height:1.05;margin-top:4px}
 
   main{flex:1;display:flex;flex-direction:column;gap:16px;padding:18px 22px}
 
-  label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oak-line);margin-bottom:7px}
+  label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:our(--oak-line);margin-bottom:7px}
   select,input{
-    width:100%;font-size:20px;padding:16px;border-radius:14px;border:2px solid var(--walnut-2);
-    background:#2b1a10;color:var(--oak);appearance:none;
+    width:100%;font-size:20px;padding:16px;border-radius:14px;border:2px solid our(--walnut-2);
+    background:#2b1a10;color:our(--oak);appearance:none;
   }
-  select:focus,input:focus{outline:none;border-color:var(--honey)}
+  select:focus,input:focus{outline:none;border-color:our(--honey)}
   .row{display:flex;gap:12px}
   .row>div{flex:1}
 
   /* ---- Signature: the status panel changes the whole mood by state ---- */
   .status{
-    border-radius:18px;padding:18px 20px;border:2px solid var(--walnut-2);
+    border-radius:18px;padding:18px 20px;border:2px solid our(--walnut-2);
     background:#2b1a10;display:flex;align-items:center;gap:14px;transition:.25s;
   }
-  .status .dot{width:14px;height:14px;border-radius:50%;background:var(--oak-line);flex:none}
-  .status.in {border-color:var(--green);background:#22301f}
-  .status.in .dot{background:var(--green);box-shadow:0 0 0 6px rgba(63,125,79,.25)}
-  .status.out{border-color:var(--honey-deep);background:#2f2412}
-  .status.out .dot{background:var(--honey)}
-  .status .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oak-line)}
+  .status .dot{width:14px;height:14px;border-radius:50%;background:our(--oak-line);flex:none}
+  .status.in {border-color:our(--green);background:#22301f}
+  .status.in .dot{background:our(--green);box-shadow:0 0 0 6px rgba(63,125,79,.25)}
+  .status.out{border-color:our(--honey-deep);background:#2f2412}
+  .status.out .dot{background:our(--honey)}
+  .status .label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:our(--oak-line)}
   .status .big{font-size:21px;font-weight:800}
-  .status .sub{font-size:13px;color:var(--oak-line);margin-top:2px}
-  .week{text-align:center;font-size:16px;font-weight:800;color:var(--honey);min-height:20px}
+  .status .sub{font-size:13px;color:our(--oak-line);margin-top:2px}
+  .week{text-align:center;font-size:16px;font-weight:800;color:our(--honey);min-height:20px}
 
   .buttons{display:flex;flex-direction:column;gap:14px;margin-top:auto}
   button.act{
@@ -60,8 +60,8 @@
   }
   button.act:active{transform:scale(.98)}
   button.act:disabled{filter:grayscale(.6) brightness(.7);}
-  .in {background:linear-gradient(180deg,var(--green),#2f5d3b)}
-  .out{background:linear-gradient(180deg,var(--honey),var(--honey-deep));color:var(--ink)}
+  .in {background:linear-gradient(180deg,our(--green),#2f5d3b)}
+  .out{background:linear-gradient(180deg,our(--honey),our(--honey-deep));color:our(--ink)}
 
   .msg{min-height:22px;text-align:center;font-size:15px;padding:0 6px}
   .msg a{color:var(--honey)}
